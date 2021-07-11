@@ -1,0 +1,16 @@
+Image Size: 8
+Average Single prediction time: 0:00:00.123284
+samples: 2024
+----------------------------------------------------
+Image Size: 16
+Average Single prediction time: 0:00:00.123962
+samples: 2024
+----------------------------------------------------
+Image Size: 32
+Average Single prediction time: 0:00:00.125142
+samples: 2024
+----------------------------------------------------
+Image Size: 64
+Average Single prediction time: 0:00:00.134279
+samples: 2024
+----------------------------------------------------

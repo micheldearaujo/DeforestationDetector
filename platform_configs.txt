@@ -1,0 +1,6 @@
+google cloud :
+2vCPU 4GB RAM, no GPU
+ubuntu 20.04 LTS
+permitir acesso padrao
+permitir trafego http
+permitir tragego https

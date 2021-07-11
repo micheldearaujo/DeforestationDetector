@@ -1,0 +1,6 @@
+K neighbors,Single classifying time (s),Avg Precision,Avg Recall,Avg Accuracy,Avg F1 score,Target size
+19,0.321,0.789,0.552,0.896,0.628,8x8
+19,0.68,0.793,0.536,0.898,0.64,16x16
+19,0.205,0.795,0.536,0.899,0.64,32x32
+19,,0.808,0.547,0.902,0.652,64x64
+19,,,,,,128x128

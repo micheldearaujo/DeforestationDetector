@@ -1,0 +1,15 @@
+Image Size: 8_100
+Average Single prediction time: 0:00:00.101881
+----------------------------------------------------
+Image Size: 16_100
+Average Single prediction time: 0:00:00.104397
+----------------------------------------------------
+Image Size: 32_100
+Average Single prediction time: 0:00:00.104283
+----------------------------------------------------
+Image Size: 64_100
+Average Single prediction time: 0:00:00.104833
+----------------------------------------------------
+Image Size: 128_100
+Average Single prediction time: 0:00:00.105053
+----------------------------------------------------
