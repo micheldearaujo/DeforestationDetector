@@ -159,7 +159,8 @@ resource <- read.csv(resources.files[1])
 time <- read.csv(times.files[1])
 View(resource)
 View(time)
-
+plot(resource$totalCpuUsage..., type='o',
+     main='Total CPU Usage (%)')
 # ----
 
 
