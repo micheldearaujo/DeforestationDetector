@@ -1,0 +1,273 @@
+# Processando os resultados dos experimentos
+
+rm(list=ls())
+
+library(tidyverse)
+library(ggplot2)
+library(readr)
+library(stringr)
+library(dplyr)
+
+# Carregando os arquivos
+#setwd('D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance')
+setwd('D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance\\resources\\New_Experiment/')
+
+resources.path <- 'D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance\\resources/New_Experiment/'
+times.path <- 'D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance\\resources/New_Experiment/'
+#times.path <- 'D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance\\times'
+
+resources <- list(re00,
+                  re01,
+                  re025,
+                  re05,
+                  re75,
+                  re1)
+times <- list(time01,
+              time025,
+              time05,
+              time075,
+              time1)
+names <- list('(None Workload)',
+              '(Workload of 0.1)',
+              '(Workload of 0.25)',
+              '(Workload of 0.5)',
+              '(Workload of 0.75)',
+              '(Workload of 1.0)')
+
+
+
+# ----------------- Explorando os novos dados do watts up
+
+
+# -- Limpando os arquivos txt que vieram com mais colunas de dados do que de título
+# Só deve ser executada uma vez.
+
+# -- O que é necessário fazer para cada arquivo?
+# -- É necessário combinar os dados dos arquivos txt (Watts) com os dados dos arquivos csv
+# -- Que possuem os recursos da maquina.
+# -- Dessa forma, são 12 arquivos, 6 de cada, que irão se combinar e gerar apenas 6 de volta.
+# -- Here is the function
+
+clean_txt <- function(file_name){
+  dat <- readLines(file_name)
+  times <- vector()
+  wats <- vector()
+  for (line in 1:length(dat)){
+    times[line] <- strsplit(dat, split='\t')[[line]][1]
+    wats[line] <- strsplit(dat, split='\t')[[line]][2]
+    
+  }
+  watts.df <- data.frame(Tempo = times, Watt = wats)
+  watts.df <- watts.df[-c(1,2),][1:34,]
+  write.csv(watts.df, file_name, row.names=F)
+}
+
+
+load_transform <- function(resources_name, watts_name){
+  # Loading the files
+  resources.i <- read.csv(resources_name)
+  watt.i <- read.delim2(watts_name, sep=',')
+  
+  # # Transformando o currenTime em diferenças de tempos entre o tempo j e o tempo inicial
+  tempos <- vector()
+  for (j in 1:nrow(resources.i)){
+    tempos[j] <- (difftime(resources.i$currentTime[j], resources.i$currentTime[1], units=c('secs')))/60
+  }
+  resources.i$Time <- tempos
+  
+  # Criando uma coluna em cada dataframe para fazer a união
+  watt.i$Id <- c(1:nrow(watt.i))
+  #watt.i <- watt.i[1:34,]
+  resources.i <- resources.i[1:34,]
+  resources.i$Id <- c(1:34)
+  
+  # Unindo os dois dataframes em apenas um
+  final.i <- merge(watt.i, resources.i, by='Id')
+  final.i <- final.i[-c(2)]
+  head(final.i)
+  
+  # Salvando o dataframe tratado
+  write.csv(final.i, resources_name, row.names=FALSE)
+  return (final.i)
+}
+
+# Pegando os nomes dos arquivos na pasta
+watts.files <- list.files(pattern='TXT', full.names=T)
+resources.files <- list.files(pattern='monitoringedge.*csv', full.names=T)
+times.files <- list.files(pattern='performanceedge.*csv', full.name=T)
+
+watts.files <- list.files('resources/', pattern='TXT', full.names=T)
+resources.files <- list.files('resources/', pattern='csv', full.names=T)
+times.files <- list.files('times/', pattern='csv', full.name=T)
+
+watts.files
+resources.files
+times.files
+
+#Aplicando a limpeza, retornando apenas o tempo e o watt, com apenas 34 observações
+for (file_name in watts.files){
+ clean_txt(file_name=file_name)
+}
+
+#Aplicando a transformação e salvando os novos csvs
+for (file_number in 1:length(resources.files)){
+ df <- load_transform(resources.files[file_number], watts.files[file_number])
+}
+
+
+
+# OS DADOS FORAM TRATADOS!
+
+## --- Adicionando todos os dataframes em apenas um
+
+uniteData <- function(files){
+  # Primeiro vamos carregar o primeiro, que servirá de base para adicionar os outros
+  df0 <- read.csv(files[1])
+  
+  # Aqui criamos uma coluna com o nome do arquivo, que contém o nome do algoritmo, o workload e o tamanho da imagem
+  df0$desc <- files[1]
+  
+  # Aqui vamos criar um loop para adicionar cada um dos arquivos a partir do list.files
+  for (file_number in 2:length(files)){
+    print(files[file_number])
+    df1 <- read.csv(files[file_number])
+    df1$desc <- files[file_number]
+    df0 <- rbind(df0, df1)
+  }
+  
+  # Separando a coluna com o nome do arquivo que foi criada anteriormente em diferentes
+  # informações, como o algoritmo, o tamanho da imagem e workload.
+  df0 <- separate(df0, col='desc',
+                  into=c('Platform', 'Algorithm', 'Size', 'Workload'),
+                  sep='_')
+  
+  # Limpando o workload
+  df0$Workload <- parse_number(x=df0$Workload)
+  df0$Platform <- str_extract(string=df0$Platform, pattern='edge|server|cloud')
+  df0$Platform <- toupper(df0$Platform)
+  df0$Algorithm <- toupper(df0$Algorithm)
+  write.csv(df0, paste(resources.path, '/resources.csv', sep=''), row.names=F)
+  return (df0)
+  
+}
+
+data <- uniteData(resources.files)
+View(data)
+
+# ----
+resource <- read.csv(resources.files[1])
+time <- read.csv(times.files[1])
+View(resource)
+View(time)
+
+# ----
+
+
+
+# ------- PROCESSING THE TIMING FILES
+# Transformando o currenTime em diferenças de tempos entre o tempo j e o tempo inicial
+# groupby workload e média dos tempos
+
+transform_times <- function(times.name){
+  
+  times.i <- read.csv(times.name)
+  
+  tempos1 <- vector()
+  tempos2 <- vector()
+  
+  for (j in 1:nrow(times.i)){
+    tempos1[j] <- (difftime(times.i$currentTime[j], times.i$currentTime[1], units=c('secs')))/60
+    # Transformando o classificationTime em segundos
+    tempos2[j] <- as.numeric(unlist(strsplit(times.i$classificationTime[j], split='\\.'))[2])/1000000
+  }
+  times.i$Tempo <- tempos1
+  times.i$ClassificationTime <- tempos2
+  
+  times.i <- filter(times.i, Tempo <=34)
+  
+  times.i$desc <- times.name
+  times.i <- separate(times.i, col='desc',
+           into=c('Platform', 'Algorithm', 'Size', 'Workload'),
+           sep='_')
+  
+  times.i$Workload <- parse_number(x=times.i$Workload)
+  times.i$Platform <- str_extract(string=times.i$Platform, pattern='edge|server|cloud')
+  times.i$Platform <- toupper(times.i$Platform)
+  times.i$Algorithm <- toupper(times.i$Algorithm)
+  write.csv(times.i, times.name, row.names=F)
+  return (times.i)
+}
+
+times.files[1]
+
+
+start_time <- Sys.time()
+for (file in times.files){
+  time.df <- transform_times(file)
+}
+end_time <- Sys.time()
+
+print(paste('O tempo de processamento foi de:', end_time - start_time, sep=' '))
+
+
+unite_TimeData <- function(files){
+  time.1 <- read.csv(files[1])
+  
+  for (file_number in 2:length(files)){
+    time.i <- read.csv(files[file_number])
+    time.1 <- rbind(time.1, time.i)
+  }
+  
+  write.csv(time.1, 'times/times.csv', row.names=F)
+}
+
+unite_TimeData(times.files)
+
+# --------------------- UNITE AND SALVE ALL
+
+times <- read.csv('times.csv')
+resources <- read.csv('resources.csv')
+
+times <- read.csv(times.files)
+resources <- read.csv(resources.files)
+resources.files
+
+#times <- read.csv('times/times.csv')
+#resources <- read.csv('resources/resources.csv')
+
+View(times)
+View(resources)
+
+# Calculando as médias dos tempos de classificação
+mean.times <- times %>%
+  group_by(Workload, Size, Algorithm, Platform) %>%
+  summarise(MeanClassificationTime = mean(ClassificationTime))
+View(mean.times)
+
+# Calculando as médias dos recursos
+mean.resources <- resources %>%
+  group_by(Workload, Size, Algorithm, Platform) %>%
+  summarise(MeanMemoryUsage = mean(percentageMemory...),
+            MeanCPUUsage = mean(totalCpuUsage...),
+            MeanConsumption = mean(Watt),
+            )
+View(mean.resources)
+
+# Salvando cada um separadamente
+write.csv(mean.times, 'mean_times.csv', row.names=F)
+write.csv(mean.resources, '/mean_resources.csv', row.names=F)
+
+#write.csv(mean.times, 'times/mean_times.csv', row.names=F)
+#write.csv(mean.resources, 'resources/mean_resources.csv', row.names=F)
+
+
+# -- Uniting the 2 dataframes
+mean.resources$MeanClassificationTime <- mean.times$MeanClassificationTime
+
+newcolumn <- mean.resources[1:9,1:4]
+newcolumn$MeanClassificationTime <- 0
+newcolumns <- rbind(newcolumn, mean.times)
+mean.resources$MeanClassificationTime <- newcolumns$MeanClassificationTime
+
+View(mean.resources)
+write.csv(mean.resources, 'mean_values.csv', row.names=F)
