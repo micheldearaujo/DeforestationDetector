@@ -27,8 +27,7 @@ times <- list(time01,
               time05,
               time075,
               time1)
-names <- list('(None Workload)',
-              '(Workload of 0.1)',
+names <- list('(Workload of 0.1)',
               '(Workload of 0.25)',
               '(Workload of 0.5)',
               '(Workload of 0.75)',
@@ -101,10 +100,11 @@ resources.files <- list.files('resources/', pattern='csv', full.names=T)
 times.files <- list.files('times/', pattern='csv', full.name=T)
 
 watts.files
-resources.files
+re <- read.csv(resources.files[5])
+View(re)
 times.files
 
-#Aplicando a limpeza, retornando apenas o tempo e o watt, com apenas 34 observações
+#Aplicando a limpeza nos arquivos txt, retornando apenas o tempo e o watt, com apenas 34 observações
 for (file_name in watts.files){
  clean_txt(file_name=file_name)
 }
@@ -219,7 +219,8 @@ unite_TimeData <- function(files){
     time.1 <- rbind(time.1, time.i)
   }
   
-  write.csv(time.1, 'times/times.csv', row.names=F)
+  write.csv(time.1, 'times.csv', row.names=F)
+  #write.csv(time.1, 'times/times.csv', row.names=F)
 }
 
 unite_TimeData(times.files)
@@ -250,7 +251,7 @@ mean.resources <- resources %>%
   group_by(Workload, Size, Algorithm, Platform) %>%
   summarise(MeanMemoryUsage = mean(percentageMemory...),
             MeanCPUUsage = mean(totalCpuUsage...),
-            MeanConsumption = mean(Watt),
+            MeanConsumption = mean(Watt, na.rm=T),
             )
 View(mean.resources)
 
@@ -272,3 +273,39 @@ mean.resources$MeanClassificationTime <- newcolumns$MeanClassificationTime
 
 View(mean.resources)
 write.csv(mean.resources, 'mean_values.csv', row.names=F)
+
+times.files
+times <- read.csv(times.files[1])
+View(times)
+
+# ---------------- testing plot ------------------
+re <- read.csv(resources.files[1])
+plot(re$Id, re$percentageMemory..., type='o',
+     main='Multiprocessamento',
+     ylab='Total CPU Usage (%)',
+     xlab='Time')
+
+colors <- c('red', 'blue', 'yellow', 'purple', 'black')
+
+for (i in 1:length(names)){
+  re <- read.csv(resources.files[i])
+  lines(re$Id, re$totalCpuUsage..., col=colors[i])
+}
+
+legend('topright', pch = 15, legend=names,
+       col=colors)
+
+
+
+
+plot(mean.times$Workload, mean.times$MeanClassificationTime, type='o',
+     main='Classification Time vs Workload',
+     xlab='Workload',
+     ylab='Mean Classification Time')
+
+
+
+plot(mean.times$Workload, mean.times$MeanClassificationTime, type='o',
+     main='Classification Time vs Workload',
+     xlab='Workload',
+     ylab='Mean Classification Time')

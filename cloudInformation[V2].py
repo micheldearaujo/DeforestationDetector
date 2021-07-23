@@ -151,7 +151,7 @@ while True:
 
     executeMonitoring(arguments.d, arguments.w) #Coleta os dados de monitoramento
     
-    time.sleep(5) #Espera 60 segundos para coletar novamente
+    time.sleep(1) #Espera 60 segundos para coletar novamente
 
 
 

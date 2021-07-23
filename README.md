@@ -1,5 +1,5 @@
-# Performance Analysis of Machine Learning-Based Systems for Detecting Deforestation
-## Combining Machine Learning with Drones to help protect Amazon Rainforest
+## Performance Analysis of Machine Learning-Based Systems for Detecting Deforestation
+### Combining Machine Learning with Drones to help protect Amazon Rainforest
 
 <i> Text under construction </i>
 

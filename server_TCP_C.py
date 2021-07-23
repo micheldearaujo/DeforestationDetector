@@ -1,8 +1,11 @@
 import socket
+import time
+import datetime as dt
 from utilities import *
 import pickle
 import csv
 import argparse
+import multiprocessing
 
 ##########################
 # CONFIGURATION
@@ -14,15 +17,19 @@ targ_shape = (8, 8, 3)
 targ_size = targ_shape[:-1]
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
-sample_size = 4048
+sample_size = 1012
 estimators = 100
+
+freq = 0.5 # Frequency of reading
+period_interval = 300 # 5 minutes of processing
 
 # SENSOR ADDRESS
 #sensor1_name = "127.0.0.1"
 
 # FOG ADDRESS
 #fog_name = "10.128.0.2"
-fog_name = "192.168.0.104" # IP do meu note
+fog_name = "192.168.0.104"
+PORT = 10001
 
 
 ##########################
@@ -36,7 +43,7 @@ def criarCSV(name):
         writer = csv.writer(f)
 
         writer.writerow(('imageCounter', 'currentTime', 'meanNetworkDelay',
-                         'meanResponseTime'))
+                         'meanResponseTime', 'classificationTime'))
 
     finally:
         f.close()
@@ -51,7 +58,6 @@ class Message:
         self.result = result
 
 
-#sensor1_address = (sensor1_name, 10000)
 
 parser = argparse.ArgumentParser(description = 'Entradas')
 
@@ -64,21 +70,21 @@ arguments = parser.parse_args()
 
 sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-fog_address = (fog_name, 5050)
+fog_address = (fog_name, PORT)
 
 print('Starting Cloud UP on %s Port %s' % fog_address, file=sys.stderr)
 sock2.bind(fog_address)
-sock2.listen(5)
+sock2.listen(10001)
 
-#model = pickle.load(open('model.pkl', 'rb'))
+
 
 # ---------------------------- Model Related --------------------------
 # Load the file with the images names and labels
 mapping_csv = pd.read_csv(base_dir + '/train_classes.csv')
-modelo = load_model(base_dir+'/'+model_name, compile=False) # CNN Model
-modelo.compile(optimizer=opt, loss='binary_crossentropy', metrics=[fbeta]) # CNN Model
-#modelo = joblib.load(base_dir+'/'+'knn_%s.sav'%targ_shape[0]) # KNN modelo
-#modelo = joblib.load(base_dir+'/'+'rfc_%s_%s.sav'%(targ_shape[0],estimators)) # RFC Model
+#modelo = load_model(base_dir+'/'+model_name, compile=False) # CNN Model
+#modelo.compile(optimizer=opt, loss='binary_crossentropy', metrics=[fbeta]) # CNN Model
+modelo = joblib.load(base_dir+'/'+'knn_%s_.sav'%targ_shape[0]) # KNN modelo
+#modelo = joblib.load(base_dir+'/'+'rfc_%s_%s_.sav'%(targ_shape[0],estimators)) # RFC Model
 
 # Loading the image-label dictionary
 mapping = create_file_mapping(mapping_csv)
@@ -93,6 +99,10 @@ labels_map, inv_labels_map = create_tag_map(mapping_csv)
 classes = []
 for i in range(len(inv_labels_map)):
     classes.append(inv_labels_map[i])
+    
+def run_model(image):
+    modelo.predict(image)
+    
 # -----------------------------------------------------------
 
 
@@ -107,7 +117,9 @@ criarCSV(name)  # Chama a função para criar a csv
 
 
 #criarCSV()  # Chama a função para criar a csv
-
+#time.sleep(1)
+processos = []
+start = time.monotonic()
 while True:
 
     f = open(name, 'a')
@@ -139,57 +151,24 @@ while True:
         connection.close()
 
         # Processing the image
+        st = time.monotonic()
+        
+        # Chamando a função que executa o modelo
+        """processo = multiprocessing.Process(target=run_model, args=[msg.img])
+        processos.append(processo)
+        processo.start() """
+        
+        
         prediction = modelo.predict(msg.img)
+        et = time.monotonic()
+        tempo = timedelta(seconds= et - st)
 
-        # # Creating a ordered list with the images true labels and the other labels
-        # true_classes = mapping[img_name.split('.')[0]]
-        #
-        # # Creating a ordered list with the images true labels and the other labels
-        # true_classes_list = [0 for i in range(len(classes))]
-        # for class_ in true_classes:
-        #     index_ = classes.index(class_)
-        #     true_classes_list[index_] = 1
-        #
-        # # Creating a dataframe to organize all the info
-        # df_labels = pd.DataFrame(classes, columns=['Labels'])
-        # df_labels['True_labels'] = pd.Series(true_classes_list)
-        # df_labels['Predicted_proba'] = pd.Series(prediction[0])
-        # df_labels['Predicted_labels'] = df_labels['Predicted_proba'].apply(enconder)
-        # print(df_labels)
-        #
-        # TP = len(df_labels[(df_labels['True_labels'] == 1) & (df_labels['Predicted_labels'] == 1)])
-        # FP = len(df_labels[(df_labels['True_labels'] == 0) & (df_labels['Predicted_labels'] == 1)])
-        # TN = len(df_labels[(df_labels['True_labels'] == 0) & (df_labels['Predicted_labels'] == 0)])
-        # FN = len(df_labels[(df_labels['True_labels'] == 1) & (df_labels['Predicted_labels'] == 0)])
-        # print('True Positives: ', TP)
-        # print('False Positives: ', FP)
-        # print('True Negatives: ', TN)
-        # print('False Negatives: ', FN)
-        #
-        # # ==========  Calculating the metrics =========
-        # try:
-        #     # Precision
-        #     precision = round(TP / (TP + FP), 3)
-        #     print('Avg Precision: ', precision)
-        #
-        #     # Recall (Sensibility ou True Positive Rate)
-        #     recall = round(TP / (TP + FN), 3)
-        #     print('Avg Recal: ', recall)
-        #
-        #     # F1 Score (Weighted average between precision and recall)
-        #     f1_score = round(2 * (precision * recall) / (precision + recall), 3)
-        #
-        #     # Accuracy (Percentage of Trues)
-        #     acc = round((TP + TN) / (TP + FP + TN + FN), 3)
-        # except:
-        #     pass
-        #
-        # print('Avg Accuracy: ', acc)
-        # # # print('Avg F1_Score:', f1_score)
-        # print('\n')
-        # print('As classes previstas da imagem são: ')
-        # print(df_labels[df_labels['Predicted_labels'] == 1]['Labels'])
-        # # print('\n')
+        #print(f'A mensagem recebida foi: {data.decode("utf-8")}')
+        print(f"O pickle recebido foi: {msg.img}")
+
+
+
+
 
         delay = time.time() - msg.time
         mean_delay = mean_delay + delay
@@ -202,7 +181,15 @@ while True:
         print('Mean response time: %f - MSG Counter: %f' % (mean_delay / counter, counter))
         print('Mean network delay: %f \n' % (mean_delay2 / counter))
 
-        writer.writerow((counter, str(currentDT), mean_delay2 / counter, mean_delay / counter))
+        writer.writerow((counter, str(currentDT), mean_delay2 / counter, mean_delay / counter, tempo))
 
     finally:
         f.close()
+    end = time.monotonic()
+    tempo = dt.timedelta(seconds = end-start)
+    print(f"se passaram {tempo.seconds/60} minutos")
+    if tempo.seconds >= period_interval:
+        break
+    
+#for processo in processos:
+ #   processo.join()

@@ -9,18 +9,22 @@ import time
 # #1 Coloquei tudo para o tensorflow.keras
 # #2 np_utils está desatualizado para tensorflow >2, é apenas keras.utils
 
+#### TESTANDO O ENVIO E RECEBINDO DE IMAGES ###
+
 ##########################
 # CONFIGURATION
 ##########################
 
 # Defining the hyparams
 opt = SGD(lr=0.01, momentum=0.9)
-targ_shape = (8, 8, 3)
+targ_shape = (16, 16, 3)
 targ_size = targ_shape[:-1]
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
 sample_size = 1012
 
+buffer_size = 1024
+encoding = 'utf-8'
 # SENSOR PERIOD IN SEC
 period = 2
 
@@ -40,10 +44,11 @@ fog_address = (fog_name, PORT)
 
 
 class Message:
-    def __init__(self, id, time, img, result):
+    def __init__(self, id, time, img, img_name, result):
         self.sensor_id = id
         self.time = time
         self.img = img
+        self.img_name = img_name
         self.result = result
 
 
@@ -70,29 +75,49 @@ try:
     now_plus_period = current_time + datetime.timedelta(seconds=period)
     pause.until(now_plus_period)
     current_time = datetime.datetime.now()
-    print('\n\n %s sending msg' % datetime.datetime.now(), file=sys.stderr)
+    print('\n\n CurrentTime %s' % datetime.datetime.now(), file=sys.stderr)
 
     # Loading the test image from the test images directory
-    img_name = test_fnames[np.random.randint(0, len(test_fnames))]
-    print(img_name)
-    img = load_img(train_dir + '/' + img_name, target_size=targ_size)
+    img_name =  test_fnames[np.random.randint(0, len(test_fnames))] # randomly chooses a image 
+    print(f"Sending the {img_name}")
+    img = load_img(train_dir + '/' + img_name, target_size=targ_size) # Loads it
+
+    # Transforming into a array
     imgarray = img_to_array(img)
+    print(f"Original shape: {imgarray.shape}")
+    
     #imgarray = imgarray.reshape((1,) + imgarray.shape) # DL Models  [Alterando a dimensão, agora é um vetor unidimensional]
     imgarray = imgarray.reshape(1, -1) # ML Models
     imgarray = imgarray / 255
 
 
+    # Showing the image
+    #plt.imshow(img)
+    #plt.show()
+    print(f"Sent shape: {imgarray.shape}\n")
 
-    #img = np.expand_dims(img, axis = 0) # nao precisa para o cnn
-    msg = Message(1, time.time(), imgarray, -1)
+    # Create a class called Message that will hold different files and informations about the image
+    # Such as: The array itself, the name of the image and the time which the images is being sent.
+    msg = Message(1, time.time(), imgarray, img_name, -1)
+
     #msg2 = Message(1, time.time(), img_name, -1)
     data = pickle.dumps(msg)
+
     #data2 = pickle.dumps(msg2)
 
     sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    print(f"Connecting to the server {fog_address}...")
     sock2.connect(fog_address)
+    print("Connected!!\n")
+
+    print("Sending the message...")
     sock2.sendall(data)
-    #sock2.sendall(data2)
+    print(f"Message sent!\n ...")
+    print("Connection Closed.")
+
+    #print(sock2.recv(buffer_size).decode(encoding)) 
+
     sock2.close()
 except Exception:
     pass
