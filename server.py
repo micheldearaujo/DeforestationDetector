@@ -23,8 +23,8 @@ estimators = 100
 
 encoding = 'utf-8'
 buffer_size = 1024
-freq = 0.5 # Frequency of reading
-period_interval = 60 # 5 minutes of processing
+freq = 10 # Frequency of reading
+period_interval = 60 # seconds of processing
 threshold = 0.3
 
 # SENSOR ADDRESS
@@ -87,9 +87,9 @@ sock2.listen(10001)
 # ---------------------------- Model Related --------------------------
 # Load the file with the images names and labels
 mapping_csv = pd.read_csv(base_dir + '/train_classes.csv')
-#modelo = load_model(base_dir+'/'+model_name, compile=False) # CNN Model
-#modelo.compile(optimizer=opt, loss='binary_crossentropy', metrics=[fbeta]) # CNN Model
-modelo = joblib.load(base_dir+'/'+'knn_%s_.sav'%targ_shape[0]) # KNN modelo
+modelo = load_model(base_dir+'/'+model_name, compile=False) # CNN Model
+modelo.compile(optimizer=opt, loss='binary_crossentropy', metrics=[fbeta]) # CNN Model
+#modelo = joblib.load(base_dir+'/'+'knn_%s_.sav'%targ_shape[0]) # KNN modelo
 #modelo = joblib.load(base_dir+'/'+'rfc_%s_%s_.sav'%(targ_shape[0],estimators)) # RFC Model
 
 # Loading the image-label dictionary
@@ -121,7 +121,7 @@ processos = []
 start = time.monotonic()
 #while True:
 
-f = open(name, 'a')
+
 
 def process_image(image, image_name):
     img = image
@@ -134,21 +134,21 @@ def process_image(image, image_name):
 
     #  ------ Testing the prediction
 
-    # Criando uma lista com as classes verdadeiras da referida imagem
+    # Defining a list with the particular image true labels
     true_classes = mapping[imagefile.split('.')[0]]
 
-    # Criando uma lista ordenada com as classes verdadeiras e todas as outras classes
+    # Defining a ordered list with the true labels and all other possible labels
     true_classes_list =[0 for i in range(len(classes))]
     for class_ in true_classes:
         index_ = classes.index(class_)
         true_classes_list[index_] = 1
 
-    # Criando um dataframe para organizar todas as informações da classificacao da imagem
+    # Creating a dataframe to organize the data from the image classification
     df_labels = pd.DataFrame(classes, columns=['Labels'])
     df_labels['True_labels'] = pd.Series(true_classes_list)
     df_labels['Predicted_proba'] = pd.Series(prediction[0])
 
-    # Definindo como 1 as classes que possuem probabilidade maior que % e 0 o contrario
+    # Defining as 1 the classes whose probability is bigger than the threshold
     def enconder(probabilidade):
         if probabilidade > threshold:
             return 1
@@ -170,19 +170,19 @@ def process_image(image, image_name):
     print('False Negatives: ', FN)
     print('\n')
 
-    # definindo e calculando as métricas
+    # Defning and calculating the metrics
     # Precision
     precision = round(TP / (TP + FP), 3)
     print('Avg Precision: ', precision)
 
-    # Recall (Sensibilidade ou True Positive Rate)
+    # Recall (Sensibility or True Positive Rate)
     recall = round(TP / (TP + FN), 3)
     print('Avg Recal: ', recall)
 
-    # F1 Score (Media ponderada entre precision e recall)
+    # F1 Score (Weighted mean between precision e recall)
     f1_score = round(2 * (precision * recall) / (precision + recall), 3)
 
-    # Overall Accuracy (Porcentagem de acertos sobre o total)
+    # Overall Accuracy (Percent of right classifications of the total classifications)
     acc = round((TP+TN)/(TP + FP + TN + FN), 3)
 
     print('Avg Accuracy: ', acc)
@@ -201,6 +201,7 @@ def receive_image():
     
     while True:
         try:
+            f = open(name, 'a')
             writer = csv.writer(f)
 
             print('\n\n\nWaiting for client Connection...\n', file=sys.stderr)
@@ -231,7 +232,7 @@ def receive_image():
                     print(f"The message was broken into {pieces} pieces.")
                     print(f"{'-'*15}// end of message //{'-'*15}\n ... \n")
 
-                    #connection.send(f"{fog_address} received your message!".encode(encoding))
+                    connection.send(f"{fog_address} received your image!".encode(encoding))
 
                     # Now that the image is fully received, it is necessary to load it
                     msg = pickle.loads(b"".join(data))
@@ -262,8 +263,6 @@ def receive_image():
             processos.append(processo)
             processo.start() """
             
-            
-            #prediction = modelo.predict(msg.img)
 
             # Displaying the image
             #img = array_to_img(img_array)
@@ -291,12 +290,13 @@ def receive_image():
 
         finally:
             f.close()
+
         end = time.monotonic()
         tempo = dt.timedelta(seconds = end-start)
         print(f"Se passaram {round(tempo.seconds/60, 2)} minutos.")
 
 
-        if tempo.seconds >= period_interval:
+        if (tempo.seconds >= period_interval):
             break
     
 #for processo in processos:

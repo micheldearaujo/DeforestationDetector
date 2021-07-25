@@ -23,10 +23,13 @@ dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
 sample_size = 1012
 
-buffer_size = 1024
 encoding = 'utf-8'
-# SENSOR PERIOD IN SEC
-period = 2
+buffer_size = 1024
+freq = 10           # Frequency of reading
+period_interval = 60 # seconds of processing
+
+# Messenger frequency
+period = 1
 
 # FOG ADDRESS
 
@@ -53,29 +56,12 @@ class Message:
 
 
 
-'''
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sensor_address = (sensor_name, 10000)
-sock.bind(sensor_address)
-sock.listen(5)
 
-'''
-#port = 5000
-
-mean_delay = 0.0
-
-counter = 0
-
-current_time = datetime.datetime.now()
-time.sleep(5)
+# Start counting the processing time
 start = time.monotonic()
 #while True:
 
-try:
-    now_plus_period = current_time + datetime.timedelta(seconds=period)
-    pause.until(now_plus_period)
-    current_time = datetime.datetime.now()
-    print('\n\n CurrentTime %s' % datetime.datetime.now(), file=sys.stderr)
+def load_image():
 
     # Loading the test image from the test images directory
     img_name =  test_fnames[np.random.randint(0, len(test_fnames))] # randomly chooses a image 
@@ -86,8 +72,8 @@ try:
     imgarray = img_to_array(img)
     print(f"Original shape: {imgarray.shape}")
     
-    #imgarray = imgarray.reshape((1,) + imgarray.shape) # DL Models  [Alterando a dimensão, agora é um vetor unidimensional]
-    imgarray = imgarray.reshape(1, -1) # ML Models
+    imgarray = imgarray.reshape((1,) + imgarray.shape) # DL Models  [Alterando a dimensão, agora é um vetor unidimensional]
+    #imgarray = imgarray.reshape(1, -1) # ML Models
     imgarray = imgarray / 255
 
 
@@ -96,32 +82,60 @@ try:
     #plt.show()
     print(f"Sent shape: {imgarray.shape}\n")
 
-    # Create a class called Message that will hold different files and informations about the image
+    # Create a class called Message that will hold and send different files and informations about the image
     # Such as: The array itself, the name of the image and the time which the images is being sent.
     msg = Message(1, time.time(), imgarray, img_name, -1)
+    
+    return msg
 
-    #msg2 = Message(1, time.time(), img_name, -1)
-    data = pickle.dumps(msg)
 
-    #data2 = pickle.dumps(msg2)
+def send_image():
 
-    sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    mean_delay = 0.0
+    counter = 0
+    current_time = datetime.datetime.now()
 
-    print(f"Connecting to the server {fog_address}...")
-    sock2.connect(fog_address)
-    print("Connected!!\n")
+    while True:
+        try:
+            now_plus_period = current_time + datetime.timedelta(seconds=period)
+            pause.until(now_plus_period)
+            current_time = datetime.datetime.now()
+            print('\n\n CurrentTime %s' % datetime.datetime.now(), file=sys.stderr)
 
-    print("Sending the message...")
-    sock2.sendall(data)
-    print(f"Message sent!\n ...")
-    print("Connection Closed.")
+            msg = load_image()
 
-    #print(sock2.recv(buffer_size).decode(encoding)) 
+            data = pickle.dumps(msg)
 
-    sock2.close()
-except Exception:
-    pass
-end = time.monotonic()
-tempo = dt.timedelta(seconds= end-start)
-#if tempo.seconds >=300:
-   # break
+            #data2 = pickle.dumps(msg2)
+
+            sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+            print(f"Connecting to the server {fog_address}...")
+            sock2.connect(fog_address)
+            print("Connected!!\n")
+
+            # Sending the data
+            print("Sending the message...")
+            sock2.sendall(data)
+            print(f"Message sent!\n ...")
+            print("Connection Closed.")
+
+            feedback = sock2.recv(buffer_size).decode(encoding)
+            print(feedback) 
+
+            sock2.close()
+
+            # Waiting to send another one
+            time.sleep(period)
+
+        except Exception:
+            pass
+
+
+        end = time.monotonic()
+        tempo = dt.timedelta(seconds= end-start)
+        if (tempo.seconds >= period_interval+5):
+            break
+
+
+send_image()
