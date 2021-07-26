@@ -9,31 +9,7 @@ library(stringr)
 library(dplyr)
 
 # Carregando os arquivos
-#setwd('D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance')
-setwd('D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance\\resources\\New_Experiment/')
-
-resources.path <- 'D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance\\resources/New_Experiment/'
-times.path <- 'D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance\\resources/New_Experiment/'
-#times.path <- 'D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance\\times'
-
-resources <- list(re00,
-                  re01,
-                  re025,
-                  re05,
-                  re75,
-                  re1)
-times <- list(time01,
-              time025,
-              time05,
-              time075,
-              time1)
-names <- list('(Workload of 0.1)',
-              '(Workload of 0.25)',
-              '(Workload of 0.5)',
-              '(Workload of 0.75)',
-              '(Workload of 1.0)')
-
-
+setwd('/media/michel/DADOS/Mestrado/performance_watt/edge/newperformance')
 
 # ----------------- Explorando os novos dados do watts up
 
@@ -91,17 +67,13 @@ load_transform <- function(resources_name, watts_name){
 }
 
 # Pegando os nomes dos arquivos na pasta
-watts.files <- list.files(pattern='TXT', full.names=T)
-resources.files <- list.files(pattern='monitoringedge.*csv', full.names=T)
-times.files <- list.files(pattern='performanceedge.*csv', full.name=T)
 
 watts.files <- list.files('resources/', pattern='TXT', full.names=T)
 resources.files <- list.files('resources/', pattern='csv', full.names=T)
 times.files <- list.files('times/', pattern='csv', full.name=T)
 
 watts.files
-re <- read.csv(resources.files[5])
-View(re)
+resources.files
 times.files
 
 #Aplicando a limpeza nos arquivos txt, retornando apenas o tempo e o watt, com apenas 34 observações
@@ -199,7 +171,6 @@ transform_times <- function(times.name){
   return (times.i)
 }
 
-times.files[1]
 
 
 start_time <- Sys.time()
@@ -228,7 +199,7 @@ unite_TimeData(times.files)
 # --------------------- UNITE AND SALVE ALL
 
 times <- read.csv('times.csv')
-resources <- read.csv('resources.csv')
+resources <- read.csv('resources/resources.csv')
 
 times <- read.csv(times.files)
 resources <- read.csv(resources.files)
@@ -242,9 +213,10 @@ View(resources)
 
 # Calculando as médias dos tempos de classificação
 mean.times <- times %>%
-  group_by(Workload, Size, Algorithm, Platform) %>%
-  summarise(MeanClassificationTime = mean(ClassificationTime))
-View(mean.times)
+  group_by(Platform, Algorithm, Size, Workload) %>%
+  summarise(meanNetworkDelay = mean(meanNetworkDelay),
+            meanResponseTime = mean(meanResponseTime)) %>%
+  arrange(Workload, Size)
 
 # Calculando as médias dos recursos
 mean.resources <- resources %>%
@@ -256,20 +228,20 @@ mean.resources <- resources %>%
 View(mean.resources)
 
 # Salvando cada um separadamente
-write.csv(mean.times, 'mean_times.csv', row.names=F)
-write.csv(mean.resources, '/mean_resources.csv', row.names=F)
-
-#write.csv(mean.times, 'times/mean_times.csv', row.names=F)
-#write.csv(mean.resources, 'resources/mean_resources.csv', row.names=F)
+write.csv(mean.times, 'times/mean_times.csv', row.names=F)
+write.csv(mean.resources, 'resources/mean_resources.csv', row.names=F)
 
 
 # -- Uniting the 2 dataframes
-mean.resources$MeanClassificationTime <- mean.times$MeanClassificationTime
+mean.resources$meanNetworkDelay <- mean.times$meanNetworkDelay
+mean.resources$meanResponseTime <- mean.times$meanResponseTime
 
 newcolumn <- mean.resources[1:9,1:4]
-newcolumn$MeanClassificationTime <- 0
+newcolumn$meanNetworkDelay <- 0
+newcolumn$meanResponseTime <- 0
 newcolumns <- rbind(newcolumn, mean.times)
-mean.resources$MeanClassificationTime <- newcolumns$MeanClassificationTime
+mean.resources$meanNetworkDelay <- newcolumns$meanNetworkDelay
+mean.resources$meanResponseTime <- newcolumns$meanResponseTime
 
 View(mean.resources)
 write.csv(mean.resources, 'mean_values.csv', row.names=F)
@@ -309,3 +281,17 @@ plot(mean.times$Workload, mean.times$MeanClassificationTime, type='o',
      main='Classification Time vs Workload',
      xlab='Workload',
      ylab='Mean Classification Time')
+
+
+# ---------------------- LOOKING AT THE NETWORK INFORMATION ------------------
+
+times <- read.csv('times/times.csv')
+View(times)
+names(times)
+mean.times <- times %>%
+  group_by(Platform, Algorithm, Size, Workload) %>%
+  summarise(meanNetworkDelay = mean(meanNetworkDelay),
+            meanResponseTime = mean(meanResponseTime))
+
+View(mean.times)
+write.csv(mean.times, 'times/mean_times.csv')

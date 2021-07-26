@@ -303,4 +303,5 @@ def receive_image():
  #   processo.join()
 
 
+# Starting the script
 receive_image()
