@@ -34,7 +34,7 @@ period = 1
 # FOG ADDRESS
 
 #fog_name = '34.123.200.72' # IP Externo da Cloud
-fog_name = "192.168.0.104" # IP local
+fog_name = "192.168.0.110" # IP local
 #PORT = 3389 # Porta que a GC libera
 PORT = 10001  # porta local
 
@@ -118,12 +118,15 @@ def send_image():
             print("Sending the message...")
             sock2.sendall(data)
             print(f"Message sent!\n ...")
+
+            # Closing connection
+            sock2.close()
             print("Connection Closed.")
 
-            feedback = sock2.recv(buffer_size).decode(encoding)
-            print(feedback) 
+            #feedback = sock2.recv(buffer_size).decode(encoding)
+            #print(feedback)
 
-            sock2.close()
+            
 
             # Waiting to send another one
             time.sleep(period)

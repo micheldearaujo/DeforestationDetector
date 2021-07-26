@@ -170,20 +170,24 @@ def process_image(image, image_name):
     print('False Negatives: ', FN)
     print('\n')
 
-    # Defning and calculating the metrics
-    # Precision
-    precision = round(TP / (TP + FP), 3)
-    print('Avg Precision: ', precision)
+    # Defining and calculating the metrics
+    try:
+        # Precision
+        precision = round(TP / (TP + FP), 3)
+        print('Avg Precision: ', precision)
 
-    # Recall (Sensibility or True Positive Rate)
-    recall = round(TP / (TP + FN), 3)
-    print('Avg Recal: ', recall)
+        # Recall (Sensibility or True Positive Rate)
+        recall = round(TP / (TP + FN), 3)
+        print('Avg Recal: ', recall)
 
-    # F1 Score (Weighted mean between precision e recall)
-    f1_score = round(2 * (precision * recall) / (precision + recall), 3)
+        # F1 Score (Weighted mean between precision e recall)
+        f1_score = round(2 * (precision * recall) / (precision + recall), 3)
 
-    # Overall Accuracy (Percent of right classifications of the total classifications)
-    acc = round((TP+TN)/(TP + FP + TN + FN), 3)
+        # Overall Accuracy (Percent of right classifications of the total classifications)
+        acc = round((TP+TN)/(TP + FP + TN + FN), 3)
+        
+    except:
+        pass
 
     print('Avg Accuracy: ', acc)
     print('Avg F1_Score:', f1_score)
@@ -232,7 +236,7 @@ def receive_image():
                     print(f"The message was broken into {pieces} pieces.")
                     print(f"{'-'*15}// end of message //{'-'*15}\n ... \n")
 
-                    connection.send(f"{fog_address} received your image!".encode(encoding))
+                    #connection.send(f"{fog_address} received your image!".encode(encoding))
 
                     # Now that the image is fully received, it is necessary to load it
                     msg = pickle.loads(b"".join(data))
