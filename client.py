@@ -17,7 +17,7 @@ import time
 
 # Defining the hyparams
 opt = SGD(lr=0.01, momentum=0.9)
-targ_shape = (16, 16, 3)
+targ_shape = (32, 32, 3)
 targ_size = targ_shape[:-1]
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
@@ -34,7 +34,7 @@ period = 1
 # FOG ADDRESS
 
 #fog_name = '34.123.200.72' # IP Externo da Cloud
-fog_name = "192.168.0.110" # IP local
+fog_name = "127.0.0.1" # IP local
 #PORT = 3389 # Porta que a GC libera
 PORT = 10001  # porta local
 
@@ -121,7 +121,8 @@ def send_image():
 
             # Closing connection
             sock2.close()
-            print("Connection Closed.")
+            print("Connection Closed.\n")
+            print('-'*30)
 
             #feedback = sock2.recv(buffer_size).decode(encoding)
             #print(feedback)

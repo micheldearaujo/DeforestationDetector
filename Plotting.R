@@ -10,7 +10,7 @@ library(stringr)
 library(dplyr)
 library(ggpubr)
 
-setwd('/media/michel/DADOS/Mestrado/performance_watt/edge/newperformance')
+setwd('D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance')
 
 
 values <- read.csv('mean_values.csv')

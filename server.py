@@ -14,7 +14,7 @@ import multiprocessing
 
 # Defining the hyparams
 opt = SGD(lr=0.01, momentum=0.9)
-targ_shape = (16, 16, 3)
+targ_shape = (32, 32, 3)
 targ_size = targ_shape[:-1]
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
@@ -32,7 +32,7 @@ threshold = 0.3
 
 # FOG ADDRESS
 #fog_ip = "10.128.0.2"
-fog_ip = "192.168.0.104"
+fog_ip = "127.0.0.1"
 PORT = 10001
 
 
@@ -185,16 +185,18 @@ def process_image(image, image_name):
 
         # Overall Accuracy (Percent of right classifications of the total classifications)
         acc = round((TP+TN)/(TP + FP + TN + FN), 3)
-        
-    except:
-        pass
 
-    print('Avg Accuracy: ', acc)
-    print('Avg F1_Score:', f1_score)
-    print('\n')
-    print('As classes previstas da imagem são: ')
-    print(df_labels[df_labels['Predicted_labels']==1]['Labels'])
-    print('\n')
+        print('Accuracy: ', acc)
+        print('F1_Score:', f1_score)
+        print('\n')
+        print('The predicted labels to this image are: ')
+        print(df_labels[df_labels['Predicted_labels']==1]['Labels'])
+        print('\n')
+        
+    except ZeroDivisionError as e:
+        print(e)
+
+
 
 
 
@@ -204,6 +206,13 @@ def receive_image():
     mean_delay2 = 0.0
     
     while True:
+
+        end = time.monotonic()
+        tempo = dt.timedelta(seconds = end-start)
+        print(f"Se passaram {round(tempo.seconds/60, 2)} minutos.")
+        if (tempo.seconds > period_interval):
+            break
+
         try:
             f = open(name, 'a')
             writer = csv.writer(f)
@@ -295,13 +304,13 @@ def receive_image():
         finally:
             f.close()
 
-        end = time.monotonic()
+"""         end = time.monotonic()
         tempo = dt.timedelta(seconds = end-start)
         print(f"Se passaram {round(tempo.seconds/60, 2)} minutos.")
 
 
-        if (tempo.seconds >= period_interval):
-            break
+        if (tempo.seconds > period_interval):
+            break """
     
 #for processo in processos:
  #   processo.join()
