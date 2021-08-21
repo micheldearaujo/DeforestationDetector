@@ -26,17 +26,17 @@ sample_size = 1012
 encoding = 'utf-8'
 buffer_size = 1024
 freq = 10           # Frequency of reading
-period_interval = 60 # seconds of processing
+period_interval = 60    # seconds of processing
 
 # Messenger frequency
 period = 1
 
 # FOG ADDRESS
 
-fog_name = '34.125.201.89' # IP Externo da Cloud
-#fog_name = "127.0.0.1" # IP local
-PORT = 3389 # Porta que a GC libera
-PORT = 10001  # porta local
+fog_name = '34.125.201.89'  # IP Externo da Cloud
+#fog_name = "127.0.0.1"     # IP local
+PORT = 3389                 # Porta que a GC libera
+#PORT = 10001               # porta local
 
 
 fog_address = (fog_name, PORT)
@@ -44,7 +44,6 @@ fog_address = (fog_name, PORT)
 #sensor_name = "0.0.0.0"
 
 #----------------------------------------------------------
-
 
 class Message:
     def __init__(self, id, time, img, img_name, result):
@@ -60,6 +59,7 @@ class Message:
 # Start counting the processing time
 start = time.monotonic()
 #while True:
+
 
 def load_image():
 

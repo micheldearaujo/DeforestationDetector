@@ -10,7 +10,7 @@ Created on TUE Apr 30 2021     10:00:00
 # Importing the library
 from utilities import *
 
-# Definind the hyparams
+# Defining the hyparams
 targ_shape = (128, 128, 3)
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 opt = SGD(lr=0.01, momentum=0.9)
