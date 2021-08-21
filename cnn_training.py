@@ -11,7 +11,7 @@ Created on TUE Apr 30 2021     10:00:00
 from utilities import *
 
 # Definind the hyparams
-targ_shape = (8, 8,3)
+targ_shape = (128, 128, 3)
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 opt = SGD(lr=0.01, momentum=0.9)
 
@@ -65,8 +65,11 @@ def run():
                                        horizontal_flip=True,
                                        vertical_flip=True,
                                        rotation_range=90)
+
     # The test images are only reescaled
+
     val_datagen = ImageDataGenerator(rescale=1.0/255.0)
+
     # Applying the iterators
     # Here is created the arrays who will feed the model
     # The Xtr and Xte arrays will become the iterators

@@ -78,19 +78,26 @@ def one_hot_enconde(tags, mapping):
 # Creating a function to transform the images into a arrays
 def load_dataset(path, file_mapping, tag_mapping,targ_size):
     pics, targets = list(), list()
+
     # Vai percorrer todas as imagens no diretório
     for filename in os.listdir(path):
+
         # Carrega a imagen com as dimensoes especificadas
         pic = load_img(path + '/' + filename, target_size=targ_size)
+
         # Transforma a imagens numa matriz de valores dos pixels
         pic = img_to_array(pic, dtype='uint8')
+
         # Cria o mapeamento das tags para o nome dos arquivos
         tags = file_mapping[filename[:-4]]
+
         # Transforma a tag de texto para numeros
         target = one_hot_enconde(tags, tag_mapping)
+
         # Junta todos os arrays criados nas listas de imagens e labels
         pics.append(pic)
         targets.append(target)
+
     # as imagens e os labels eram listas, vamos carregar como arrays
     X = np.asarray(pics, dtype='uint8')
     y = np.asarray(targets, dtype='uint8')

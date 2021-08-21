@@ -33,9 +33,9 @@ period = 1
 
 # FOG ADDRESS
 
-#fog_name = '34.123.200.72' # IP Externo da Cloud
-fog_name = "127.0.0.1" # IP local
-#PORT = 3389 # Porta que a GC libera
+fog_name = '34.125.201.89' # IP Externo da Cloud
+#fog_name = "127.0.0.1" # IP local
+PORT = 3389 # Porta que a GC libera
 PORT = 10001  # porta local
 
 
