@@ -3,4 +3,4 @@
 
 <i> Text under construction </i>
 
-### Please, [click here](https://github.com/micheldearaujo/DeforestationDetector/blob/main/SBESC__2021.pdf) to check out the results of this research.
+### Please, [click here](https://github.com/micheldearaujo/DeforestationDetector/blob/main/SBESC___2021.pdf) to check out the results of this research.
