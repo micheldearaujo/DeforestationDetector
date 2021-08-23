@@ -6,9 +6,6 @@ import numpy as np
 import pickle
 import time
 
-# #1 Coloquei tudo para o tensorflow.keras
-# #2 np_utils está desatualizado para tensorflow >2, é apenas keras.utils
-
 #### TESTANDO O ENVIO E RECEBINDO DE IMAGES ###
 
 ##########################
@@ -17,7 +14,7 @@ import time
 
 # Defining the hyparams
 opt = SGD(lr=0.01, momentum=0.9)
-targ_shape = (32, 32, 3)
+targ_shape = (64, 64, 3)
 targ_size = targ_shape[:-1]
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
@@ -25,11 +22,11 @@ sample_size = 1012
 
 encoding = 'utf-8'
 buffer_size = 1024
-freq = 10           # Frequency of reading
-period_interval = 60    # seconds of processing
+freq = 60           # Frequency of reading
+period_interval = 2100    # seconds of processing
 
 # Messenger frequency
-period = 1
+period = 0.25
 
 # FOG ADDRESS
 

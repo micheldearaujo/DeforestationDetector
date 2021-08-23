@@ -55,7 +55,7 @@ def get_size(bytes, suffix="B"):
 
 def executeMonitoring(x,y):
     
-    name = "monitoring" + x + "_" + y + ".csv"
+    name = "monitoring" + "_" + x + "_" + y + ".csv"
     
     f = open(name, 'a')
     
