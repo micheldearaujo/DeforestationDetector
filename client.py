@@ -14,7 +14,7 @@ import time
 
 # Defining the hyparams
 opt = SGD(lr=0.01, momentum=0.9)
-targ_shape = (64, 64, 3)
+targ_shape = (16, 16, 3)
 targ_size = targ_shape[:-1]
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
@@ -69,8 +69,8 @@ def load_image():
     imgarray = img_to_array(img)
     print(f"Original shape: {imgarray.shape}")
     
-    imgarray = imgarray.reshape((1,) + imgarray.shape) # DL Models  [Alterando a dimensão, agora é um vetor unidimensional]
-    #imgarray = imgarray.reshape(1, -1) # ML Models
+    #imgarray = imgarray.reshape((1,) + imgarray.shape) # DL Models  [Alterando a dimensão, agora é um vetor unidimensional]
+    imgarray = imgarray.reshape(1, -1) # ML Models
     imgarray = imgarray / 255
 
 

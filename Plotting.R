@@ -10,7 +10,7 @@ library(stringr)
 library(dplyr)
 library(ggpubr)
 
-setwd('D:\\Projects\\Mestrado\\performance_watt\\edge\\newperformance')
+setwd('/media/michel/dados/Projects/Mestrado/performance_watt/cloud/')
 
 
 values <- read.csv('mean_values.csv')
@@ -45,44 +45,52 @@ memory128 <- ggplot(data=filter(values, Size==128), aes(x=Workload, y=MeanMemory
   geom_line(aes(col=Algorithm)) + 
   labs(title='Memory Analysis (128x128)', 
        x='Workload', y='Mean Memory Usage(%)') +
-  coord_cartesian(ylim=c(12, 55)) +
-  scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
-  scale_y_continuous(breaks=seq(15, 55, 5)) +
-  scale_color_manual(limits = c("CNN", "KNN", "RF"),
-                     values = c('#00ccff','#ff3300', '#000000'))
+  coord_cartesian(ylim=c(12, 55)) 
+  # scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
+  # scale_y_continuous(breaks=seq(15, 55, 5)) +
+  # scale_color_manual(limits = c("CNN", "KNN", "RF"),
+  #                    values = c('#00ccff','#ff3300', '#000000'))
 
 memory64 <- ggplot(data=filter(values, Size==64), aes(x=Workload, y=MeanMemoryUsage)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='Memory Analysis (64x64)', 
        x='Workload', y='Mean Memory Usage(%)') +
-  coord_cartesian(ylim=c(12, 55)) +
-  scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
-  scale_y_continuous(breaks=seq(15, 55, 5)) +
-  scale_color_manual(limits = c("CNN", "KNN", "RF"),
-                     values = c('#00ccff','#ff3300', '#000000'))
-
+  coord_cartesian(ylim=c(8.65, 9.05)) 
+  # scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
+  # scale_y_continuous(breaks=seq(15, 55, 5)) +
+  # scale_color_manual(limits = c("CNN", "KNN", "RF"),
+  #                    values = c('#00ccff','#ff3300', '#000000'))
 
 
 memory32 <- ggplot(data=filter(values, Size==32), aes(x=Workload, y=MeanMemoryUsage)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='Memory Analysis (32x32)', 
        x='Workload', y='Mean Memory Usage(%)') +
-  coord_cartesian(ylim=c(12, 55)) +
-  scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
-  scale_y_continuous(breaks=seq(15, 55, 5)) +
-  scale_color_manual(limits = c("CNN", "KNN", "RF"),
-                     values = c('#00ccff','#ff3300', '#000000'))
-  
+  coord_cartesian(ylim=c(8.65, 9.05)) 
+  # scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
+  # scale_y_continuous(breaks=seq(15, 55, 5)) +
+  # scale_color_manual(limits = c("CNN", "KNN", "RF"),
+  #                    values = c('#00ccff','#ff3300', '#000000'))
 
+memory16 <- ggplot(data=filter(values, Size==16), aes(x=Workload, y=MeanMemoryUsage)) +
+  geom_line(aes(col=Algorithm)) + 
+  labs(title='Memory Analysis (16x16)', 
+       x='Workload', y='Mean Memory Usage(%)') +
+  coord_cartesian(ylim=c(8.925, 9.05)) 
+  # scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
+  # scale_y_continuous(breaks=seq(15, 55, 5)) +
+  # scale_color_manual(limits = c("CNN", "KNN", "RF"),
+  #                    values = c('#00ccff','#ff3300', '#000000'))
+  
 
 memory8 <- ggplot(data=filter(values, Size==8), aes(x=Workload, y=MeanMemoryUsage)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='Memory Analysis (8x8)', x='Workload', y='Mean Memory Usage(%)') +
-  coord_cartesian(ylim=c(12, 55)) +
-  scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
-  scale_y_continuous(breaks=seq(15, 55, 5)) +
-  scale_color_manual(limits = c("CNN", "KNN", "RF"),
-                     values = c('#00ccff','#ff3300', '#000000'))
+  coord_cartesian(ylim=c(8.65, 9.05)) 
+  # scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
+  # scale_y_continuous(breaks=seq(15, 55, 5)) +
+  # scale_color_manual(limits = c("CNN", "KNN", "RF"),
+  #                    values = c('#00ccff','#ff3300', '#000000'))
 
 
 
@@ -99,9 +107,9 @@ cpu128 <- ggplot(data=filter(values, Size==128), aes(x=Workload, y=MeanCPUUsage)
 cpu64 <- ggplot(data=filter(values, Size==64), aes(x=Workload, y=MeanCPUUsage)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='CPU Analysis (64x64)', x='Workload', y='Mean CPU Usage(%)') +
-  coord_cartesian(ylim=c(25, 65)) +
+  coord_cartesian(ylim=c(5, 40)) +
   scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
-  scale_y_continuous(breaks=seq(25, 65, 5)) +
+  scale_y_continuous(breaks=seq(5, 40, 5)) +
   scale_color_manual(limits = c("CNN", "KNN", "RF"),
                      values = c('#00ccff','#ff3300', '#000000'))
 
@@ -109,9 +117,9 @@ cpu64 <- ggplot(data=filter(values, Size==64), aes(x=Workload, y=MeanCPUUsage)) 
 cpu32 <- ggplot(data=filter(values, Size==32), aes(x=Workload, y=MeanCPUUsage)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='CPU Analysis (32x32)', x='Workload', y='Mean CPU Usage(%)') +
-  coord_cartesian(ylim=c(25, 65)) +
+  coord_cartesian(ylim=c(5, 40)) +
   scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
-  scale_y_continuous(breaks=seq(25, 65, 5)) +
+  scale_y_continuous(breaks=seq(5, 40, 5)) +
   scale_color_manual(limits = c("CNN", "KNN", "RF"),
                      values = c('#00ccff','#ff3300', '#000000'))
 
@@ -119,9 +127,9 @@ cpu32 <- ggplot(data=filter(values, Size==32), aes(x=Workload, y=MeanCPUUsage)) 
 cpu8 <- ggplot(data=filter(values, Size==8), aes(x=Workload, y=MeanCPUUsage)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='CPU Analysis (8x8)', x='Workload', y='Mean CPU Usage(%)') +
-  coord_cartesian(ylim=c(25, 65)) +
+  coord_cartesian(ylim=c(5, 40)) +
   scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) + 
-  scale_y_continuous(breaks=seq(25, 65, 5)) +
+  scale_y_continuous(breaks=seq(5, 40, 5)) +
   scale_color_manual(limits = c("CNN", "KNN", "RF"),
                      values = c('#00ccff','#ff3300', '#000000'))
 
@@ -184,9 +192,9 @@ clasTime128 <- ggplot(data=filter(values, Size==128), aes(x=Workload, y=meanResp
 clasTime64 <- ggplot(data=filter(values, Size==64), aes(x=Workload, y=meanResponseTime)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='Response Time Analysis \n(64x64)', x='Workload', y='Mean Response Time (s)') +
-coord_cartesian(ylim=c(0, 0.35)) +
+  coord_cartesian(ylim=c(0.3, 1.15)) +
   scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) +
-  scale_y_continuous(breaks=seq(0, 0.35, 0.1)) +
+  scale_y_continuous(breaks=seq(0.3, 1.15, 0.05)) +
   scale_color_manual(limits = c("CNN", "KNN", "RF"),
                      values = c('#00ccff','#ff3300', '#000000'))
 
@@ -195,21 +203,21 @@ coord_cartesian(ylim=c(0, 0.35)) +
 clasTime32 <- ggplot(data=filter(values, Size==32), aes(x=Workload, y=meanResponseTime)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='Response Time Analysis \n(32x32)', x='Workload', y='Mean Response Time (s)') +
-  coord_cartesian(ylim=c(0, 0.35)) +
+  coord_cartesian(ylim=c(0.3, 1.15)) +
   scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) +
-  scale_y_continuous(breaks=seq(0, 0.35, 0.1)) +
+  scale_y_continuous(breaks=seq(0.3, 1.15, 0.05)) +
   scale_color_manual(limits = c("CNN", "KNN", "RF"),
                      values = c('#00ccff','#ff3300', '#000000'))
-                     #values = c("#999999",hcl(c(15, 195), 100, 65)))
+
 
 
 
 clasTime8 <- ggplot(data=filter(values, Size==8), aes(x=Workload, y=meanResponseTime)) +
   geom_line(aes(col=Algorithm)) + 
   labs(title='Response Time Analysis \n(8x8)', x='Workload', y='Mean Response Time (s)') +
-  coord_cartesian(ylim=c(0, 0.35)) +
+  coord_cartesian(ylim=c(0.3, 1.15)) +
   scale_x_continuous(breaks=c(round(0.0, 1), 0.1, 0.25, 0.5, 0.75, 1.0)) +
-  scale_y_continuous(breaks=seq(0, 0.35, 0.1)) +
+  scale_y_continuous(breaks=seq(0.3, 1.15, 0.05)) +
   scale_color_manual(limits = c("CNN", "KNN", "RF"),
                      values = c('#00ccff','#ff3300', '#000000'))
 
