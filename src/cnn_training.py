@@ -81,8 +81,8 @@ def run():
     # Building the model
     model = define_model()
     model_name = 'cnn_%s_SGD.h5' % (targ_shape[0])
-    checkpoint = ModelCheckpoint(base_dir+'/'+model_name, monitor='loss', save_best_only=True,
-                                 mode='min', save_freq=1, save_weights_only=True)
+    #checkpoint = ModelCheckpoint(base_dir+'/'+model_name, monitor='loss', save_best_only=True,
+                                 #mode='min', save_freq=1, save_weights_only=True)
     early_stop = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=25)
 
 
@@ -94,7 +94,7 @@ def run():
                                      validation_steps=len(val_it),
                                      epochs=200,
                                      verbose=1,
-                           callbacks=[early_stop,checkpoint])
+                           callbacks=[early_stop])
     # Avaliando o modelo
     loss, fbeta = model.evaluate(val_it,
                                             steps=len(val_it),
@@ -105,7 +105,7 @@ def run():
     print('> loss=%.3f, fbeta=%.3f'%(loss, fbeta))
 
     # Saving the model
-    model_name = 'cnn_%s_SGD_ts.h5'%(targ_shape[0])
+    model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
     # Salvando o modelo para futuras previsoes
     model.save(base_dir+'/'+model_name)
     # Plotando as curvas de aprendizado
@@ -113,6 +113,7 @@ def run():
 
 
     file = open(base_dir + '/' + 'cnn_training.txt', 'a')
+    file.write('Training platform: My notebook Ubuntu\n')
     file.write('Image Size: %s\n' % targ_shape[0])
     file.write('Training time: %s\n' % tempo)
     file.write('Loss: %s\n' % loss)
