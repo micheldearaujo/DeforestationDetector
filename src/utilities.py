@@ -6,7 +6,7 @@ Created on TUE Apr 30 2021     10:00:00
 @author: micheldearaujo
 
 """
-
+import tensorflow as tf
 import numpy as np
 import sys, os
 import pandas as pd

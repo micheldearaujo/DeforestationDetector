@@ -1,166 +1,374 @@
-import datetime
-import csv
-import codecs
-import multiprocessing
+
 import socket
-
-import pandas as pd
-import numpy as np
-import tensorflow as tf
-import keras
-from keras.models import load_model
 import time
-from _thread import *
-import threading
-
-#-----------------------------------------------------------------------
-
-def tratasock(data):
-
-	portsx, inputsx = data.split(',') #agora como string, divide o dado (port, inputs)
-
-	portsx = portsx.replace('"',"") #remove os aspas e parenteses nos dados abaixo do ports pois o dado chega "[porta1, porta2]"
-	portsx = portsx.replace('[',"")
-	portsx = portsx.replace(']',"")
-	portsx1 , portsx2 = portsx.split()
-	portsy = np.array([[portsx1, portsx2]], dtype='f') #remonta o dado com o np.array
-                        
-	inputsx = inputsx.replace('"',"") #remove os aspas e parenteses nos dados abaixo do inputs pois o dado chega "[inputs1, inputs...]"
-	inputsx = inputsx.replace('[',"")
-	inputsx = inputsx.replace(']',"")
-	inputsx1, inputsx2, inputsx3, inputsx4, inputsx5, inputsx6, inputsx7, inputsx8, inputsx9, inputsx10, inputsx11, inputsx12, inputsx13, inputsx14, inputsx15, inputsx16, inputsx17, inputsx18, inputsx19, inputsx20, inputsx21, inputsx22, inputsx23, inputsx24, inputsx25, inputsx26, inputsx27, inputsx28, inputsx29, inputsx30 = inputsx.split()
-                        
-	inputsy = np.array([[inputsx1, inputsx2, inputsx3, inputsx4, inputsx5, inputsx6, inputsx7, inputsx8, inputsx9, inputsx10, inputsx11, inputsx12, inputsx13, inputsx14, inputsx15, inputsx16, inputsx17, inputsx18, inputsx19, inputsx20, inputsx21, inputsx22, inputsx23, inputsx24, inputsx25, inputsx26, inputsx27, inputsx28, inputsx29, inputsx30]], dtype='f') #remonta o dado com o np.array
-	x = portsy, inputsy
-	#print(x)
-	return(x)
+import datetime as dt
+from utilities import *
+import pickle
+import csv
+import argparse
+import multiprocessing
 
 
-#-----------------------------------------------------------------------
-#https://github.com/mmge88/IoT_DL-based_Intrusion_Detection/blob/main/iot_botnet_2_percent_embedding.ipynb
-def callmodel(x):
+##########################
+# CONFIGURATION
+##########################
 
-	#https://www.tensorflow.org/api_docs/python/tf/config/threading/set_inter_op_parallelism_threads
-	tf.config.threading.set_inter_op_parallelism_threads(10)
+# Defining the hyparams
+opt = SGD(lr=0.01, momentum=0.9)
+targ_shape = (32, 32, 3)
+targ_size = targ_shape[:-1]
+dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
+model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
+sample_size = 1012
+estimators = 100
 
-	#https://www.tensorflow.org/api_docs/python/tf/config/threading/set_intra_op_parallelism_threads
-	tf.config.threading.set_intra_op_parallelism_threads(10)
+encoding = 'utf-8'
+buffer_size = 1024
+freq = 60 # Frequency of reading
+period_interval = 20 # seconds of processing
+threshold = 0.3
+period = 1.0
 
-	inputs = np.array([[4.2000000e+01, 1.2836580e+06, 6.5161000e+04, 0.0000000e+00, 1.0149666e+03,
-	 6.5536000e+04, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
-	 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
-	 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
-	 0.0000000e+00, 0.0000000e+00, 1.0000000e+00, 1.0000000e+00, 0.0000000e+00,
-	 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00]])
+# SENSOR ADDRESS
+#sensor1_name = "127.0.0.1"
 
-	ports = np.array([[65536., 65536.]])
-
-	embedding_dim = 16
-	input_dim = 65537 #input_dim: maximum integer index + 1
-
-	np_input = tf.keras.Input(shape=(inputs.shape[1],), name='others')
-	p_input = tf.keras.Input(shape=(ports.shape[1],), name='ports')
-
-	p_feature = tf.keras.layers.Embedding(input_dim, embedding_dim)(p_input)
-	p_feature = tf.keras.layers.GlobalAveragePooling1D()(p_feature)
-
-	merge = tf.keras.layers.concatenate([p_feature, np_input])
-
-	hidden1 = tf.keras.layers.Dense(512, activation='relu')(merge)
-	hidden2 = tf.keras.layers.Dense(512, activation='relu')(hidden1)
-	classif = tf.keras.layers.Dense(5, activation='sigmoid')(hidden2)
-
-	model = tf.keras.Model(inputs=[p_input, np_input], outputs=classif)
-
-	model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+# FOG ADDRESS
+fog_ip = "10.182.0.2"	# GCP IP
+#fog_ip = "127.0.0.1"	# Local IP
+PORT = 10001 # Local PORT
+PORT = 3389	# GCP PORT
 
 
-	portsx , inputsx = x
-	xpto = model.predict({'ports': portsx, 'others': inputsx})
-	print()
-	print(xpto)
-	print()
 
+##########################
 
-#-----------------------------------------------------------------------
-#https://gist.github.com/micktwomey/606178
+def criarCSV(name):
+    
+    f = open(name, 'w')
 
-def handle(connection, address):
+    try:
 
-	def monitor(x,y):
+        writer = csv.writer(f)
 
-		name = "monitoringTime.csv"
-		f = open(name, 'a')
-		try:
-			writer = csv.writer(f) 
-			writer.writerow((x,y))
-		finally:
-			f.close()        
-             
+        writer.writerow(('imageCounter', 'currentTime', 'meanNetworkDelay',
+                         'meanResponseTime', 'classificationTime'))
 
-	try:
-
-		data = connection.recv(2048).decode('UTF-8')
-		data = tratasock(data)
-
-		x = time.time() ### VERIFICAR TIME.TIME() OU DATETIME.DATETIME.NOW()
-		callmodel(data)
-		y = time.time()
-		monitor(x,y)
-			
-	except:
-		print("Problem handling request")
-	finally:
-		print("Closing socket")
-		connection.close()
-
-#-----------------------------------------------------------------------
-
-class Server(object):
-	def __init__(self, hostname, port):
-		self.hostname = hostname
-		self.port = port
-
-	def start(self):
-		print("listening")
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   ###TCP
-		self.socket.bind((self.hostname, self.port))
-		self.socket.listen(1)
-		self.lista = []
-
-		while True:
-			conn, address = self.socket.accept()
-			#print("Got connection")
-			process = multiprocessing.Process(target=handle, args=(conn, address))
-			process.daemon = True
-			process.start()
-			print()
-			#print("Started process %r", process)
-
-	def stop(self):
-		self.socket.close
-
+    finally:
+        f.close()
 
 # -----------------------------------------------------------------------
 
-
-if __name__ == "__main__":
-	
-	server = Server("", 9000)
-	#criarCSV()
-
-	try:
-		#print("Listening")
-		server.start()
-
-	except:
-		print("Unexpected exception")
-	finally:
-		for process in multiprocessing.active_children():
-			print("Shutting down process %r", process)
-			process.terminate()
-			process.join()
-	print("All done")
+class Message:
+    def __init__(self, id, time, img, img_name, period, period_interval, c_time, targ_shape, result):
+        """
+        Send the image, the image name, the period, the period_interval and the image size
+        """
+        self.sensor_id = id
+        self.time = time
+        self.img = img
+        self.img_name = img_name
+        self.period = period
+        self.period_interval = period_interval
+        self.c_time = c_time
+        self.targ_shape = targ_shape
+        self.result = result
 
 
 
+parser = argparse.ArgumentParser(description = 'Entradas')
+
+parser.add_argument('--dispositivo', action = 'store', dest = 'd',
+                           required = True, help = 'Cloud, Edge or Server.')
+parser.add_argument('--workload', action = 'store', dest = 'w', required = True,
+                           help = '0.1, 0.5 or 1.0')
+
+arguments = parser.parse_args()
+
+sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+fog_address = (fog_ip, PORT)
+
+print('Starting Cloud UP on %s Port %s' % fog_address, file=sys.stderr)
+sock2.bind(fog_address)
+sock2.listen(10001)
+
+
+
+# ---------------------------- Model Related --------------------------
+# Load the file with the images names and labels
+mapping_csv = pd.read_csv(base_dir + '/train_classes.csv')
+#modelo = load_model(base_dir+'/'+model_name, compile=False) # CNN Model
+def define_model(in_shape=targ_shape, out_shape=17):
+    modelo = Sequential()
+    modelo.add(Conv2D(int(targ_shape[0]/4), (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=targ_shape))
+    modelo.add(Conv2D(int(targ_shape[0]/4), (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    modelo.add(MaxPooling2D((2, 2)))
+    modelo.add(Conv2D(int(targ_shape[0]/2), (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    modelo.add(Conv2D(int(targ_shape[0]/2), (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    modelo.add(MaxPooling2D((2, 2)))
+    modelo.add(Conv2D(targ_shape[0], (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    modelo.add(Conv2D(targ_shape[0], (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    modelo.add(MaxPooling2D((2, 2)))
+    modelo.add(Flatten())
+    modelo.add(Dense(targ_shape[0], activation='relu', kernel_initializer='he_uniform'))
+    modelo.add(Dense(out_shape, activation='sigmoid'))
+    # Compilando
+    # Carregando os weights em caso de interrupção anterior:
+    modelo.compile(optimizer=opt, loss='binary_crossentropy', metrics=[fbeta])
+    return modelo
+
+modelo = define_model()
+
+modelo.load_weights(base_dir+'/'+model_name)
+modelo.compile(optimizer=opt, loss='binary_crossentropy', metrics=[fbeta]) # CNN Model
+#modelo = joblib.load(base_dir+'/'+'knn_%s_.sav'%targ_shape[0]) # KNN modelo
+#modelo = joblib.load(base_dir+'/'+'rfc_%s_%s_.sav'%(targ_shape[0],estimators)) # RFC Model
+
+# Loading the image-label dictionary
+mapping = create_file_mapping(mapping_csv)
+
+# Loading the label-number dictionary
+labels_map, inv_labels_map = create_tag_map(mapping_csv)
+
+
+# Creating a list with all possible labels
+classes = []
+for i in range(len(inv_labels_map)):
+    classes.append(inv_labels_map[i])
+    
+
+    
+# -----------------------------------------------------------
+
+
+
+name = "performance/performance" + "_" + arguments.d + "_" + arguments.w + ".csv"
+criarCSV(name)  # Chama a função para criar a csv
+
+#time.sleep(1)
+processos = []
+
+
+def process_image(image, image_name):
+    img = image
+    imagefile = image_name
+
+    # Predicting the label
+    print(f"Predicting the labels of image:\n{image_name}\n")
+    prediction = modelo.predict(img)
+
+
+    #  ------ Testing the prediction
+
+    # Defining a list with the particular image true labels
+    true_classes = mapping[imagefile.split('.')[0]]
+
+    # Defining a ordered list with the true labels and all other possible labels
+    true_classes_list =[0 for i in range(len(classes))]
+    for class_ in true_classes:
+        index_ = classes.index(class_)
+        true_classes_list[index_] = 1
+
+    # Creating a dataframe to organize the data from the image classification
+    df_labels = pd.DataFrame(classes, columns=['Labels'])
+    df_labels['True_labels'] = pd.Series(true_classes_list)
+    df_labels['Predicted_proba'] = pd.Series(prediction[0])
+
+    # Defining as 1 the classes whose probability is bigger than the threshold
+    def enconder(probabilidade):
+        if probabilidade > threshold:
+            return 1
+        else:
+            return 0
+
+    print("The predictions results are: \n")
+    df_labels['Predicted_labels'] = df_labels['Predicted_proba'].apply(enconder)
+    print(df_labels)
+    print('\n')
+
+    TP = len(df_labels[(df_labels['True_labels'] == 1) & (df_labels['Predicted_labels'] == 1)])
+    FP = len(df_labels[(df_labels['True_labels'] == 0) & (df_labels['Predicted_labels'] == 1)])
+    TN = len(df_labels[(df_labels['True_labels'] == 0) & (df_labels['Predicted_labels'] == 0)])
+    FN = len(df_labels[(df_labels['True_labels'] == 1) & (df_labels['Predicted_labels'] == 0)])
+    print('True Positives: ', TP)
+    print('False Positives: ', FP)
+    print('True Negatives: ', TN)
+    print('False Negatives: ', FN)
+    print('\n')
+
+    # Defining and calculating the metrics
+    try:
+        # Precision
+        precision = round(TP / (TP + FP), 3)
+        print('Avg Precision: ', precision)
+
+        # Recall (Sensibility or True Positive Rate)
+        recall = round(TP / (TP + FN), 3)
+        print('Avg Recal: ', recall)
+
+        # F1 Score (Weighted mean between precision e recall)
+        f1_score = round(2 * (precision * recall) / (precision + recall), 3)
+
+        # Overall Accuracy (Percent of right classifications of the total classifications)
+        acc = round((TP+TN)/(TP + FP + TN + FN), 3)
+
+        print('Accuracy: ', acc)
+        print('F1_Score:', f1_score)
+        print('\n')
+        print('The predicted labels to this image are: ')
+        print(df_labels[df_labels['Predicted_labels']==1]['Labels'])
+        print('\n')
+        
+    except ZeroDivisionError as e:
+        print(e)
+
+
+
+def receive_image(period):
+    qtdeImagens = 0
+    mean_delay = 0.0
+    counter = 0
+    mean_delay2 = 0.0
+    
+    while True:
+
+        try:
+            f = open(name, 'a')
+            writer = csv.writer(f)
+
+            print('\n\n\nWaiting for client Connection...\n', file=sys.stderr)
+
+            # This first loop ensures that if, for some reason, the connection breaks in the middle of the transference
+            # It will try again until the transference is completed
+            while True:
+                try:
+
+                    connection, client_address = sock2.accept()
+                    print('Client Connected! ', file=sys.stderr)
+                    print('Received MSG From Client %s\n' % client_address[0], file=sys.stderr)
+
+                    # This second loops collects the incoming message. Since the image is too heavy
+                    # It is broke down into pieces and received partially.
+                    # When the message is null the loop is broken and them
+                    # The pickle gather the pieces into a one.
+                    # A list to gather all the pieces of the message
+                    data = []
+                    pieces = 1
+                    while True:
+                        packet = connection.recv(buffer_size)
+                        if not packet: break
+                        data.append(packet)
+                        pieces += 1
+
+                    print("The message was fully received!")
+                    print(f"The message was broken into {pieces} pieces.")
+                    print(f"{'-'*15}// end of message //{'-'*15}\n ... \n")
+                    qtdeImagens += 1
+
+                    #connection.send(f"{fog_address} received your image!".encode(encoding))
+
+                    # Now that the image is fully received, it is necessary to load it
+                    msg = pickle.loads(b"".join(data))
+                    break
+
+                except Exception:
+                    pass
+
+            # Getting the transmission time
+            # msg.time is the time which the message was sent from the client
+            # now is the time that the image was fully received at the server.
+            # So, delay2 is the difference between sending the image and receiving it.
+            now = time.time()
+            delay2 = time.time() - msg.time
+            mean_delay2 = mean_delay2 + delay2
+            connection.close()
+
+
+            # Processing the image
+            print(f"{'-'*15}// Processing Image //{'-'*15}\n", file=sys.stderr)
+            print(f"Received a Array of shape {msg.img.shape}.\n")
+
+            # Sending image to the processing
+            process_image(msg.img, msg.img_name)
+
+            # Chamando a função que executa o modelo
+            """processo = multiprocessing.Process(target=run_model, args=[msg.img])
+            processos.append(processo)
+            processo.start() """
+            
+
+            # Displaying the image
+            #img = array_to_img(img_array)
+            #plt.imshow(img)
+            #plt.show()
+            # --------------------------------------------------------------------------------------
+
+            # Now lets count the time after the image was processed
+            # delay is the time since the image was sent from the client to when it finished being processed
+            # And we setup a counter to count how many images were processed
+            delay = time.time() - msg.time
+            mean_delay = mean_delay + delay
+            counter = counter + 1
+
+
+            #data = pickle.dumps(msg)
+            # ---------------------------------------------------------------------------------------
+            print(f"{'-'*15}// Image processed //{'-'*15}\n", file=sys.stderr)
+            currentDT = datetime.datetime.now()
+            print('Current Time: %s' % str(currentDT))
+            print('Mean response time: %f - MSG Counter: %f' % (mean_delay / counter, counter))
+            print('Mean network delay: %f \n' % (mean_delay2 / counter))
+
+            writer.writerow((counter, str(currentDT), mean_delay2 / counter, mean_delay / counter, delay))
+
+
+
+            # Verifying if it time to finish the process
+            #end = time.monotonic()
+            #tempo = dt.timedelta(seconds = end-start)
+            #print(f"Se passaram {round(tempo.seconds/60, 2)} minutos.")
+
+            print(f"Workload = {period}")
+            print(msg.c_time, "----", msg.period_interval)
+            if (msg.c_time >= msg.period_interval):
+                
+                with open("Throughput.txt", "a") as file:
+                    file.write(f"--------------------\n")
+                    file.write(f"Tamanho da imagem {targ_shape[0]}, workload {msg.period}\n")
+                    file.write(f"qtde de Imagens recebidas: {qtdeImagens}\n")
+                    file.write(f"qtde de Imagens teóricas: {msg.period_interval/msg.period}\n")
+                
+                # Writing down the files
+                with open("Throughput.csv", "a") as f:
+                    print("escrevendo arquivo")
+                    writer = csv.writer(f)
+                    writer.writerow(("CNN", "Cloud", targ_size[0], msg.period, msg.period_interval/msg.period, qtdeImagens))
+
+                    print("#############################")
+                    print("Finishing program....")
+                    print("Waiting for the next round....")
+                    time.sleep(58)
+                break
+            
+
+        finally:
+            f.close()
+
+    
+#for processo in processos:
+ #   processo.join()
+
+
+# Starting the script
+with open("Throughput.csv", "w") as f:
+    writer = csv.writer(f)
+    writer.writerow(("Algorithm", "Platform", "Size", "Workload", "qtdeTeorica", "qtdeRecebida"))
+
+
+# I will define for how long the algorithm will run
+# Now I start counting how many time has passed
+
+#start = time.monotonic()
+#for workload in [1.0, 0.75, 0.5, 0.25, 0.1, 0.1]:
+workload = 1.0
+receive_image(workload)

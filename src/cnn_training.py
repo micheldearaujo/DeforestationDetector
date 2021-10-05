@@ -11,9 +11,35 @@ Created on TUE Apr 30 2021     10:00:00
 from utilities import *
 
 # Defining the hyparams
-targ_shape = (128, 128, 3)
+targ_shape = (8, 8, 3)
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
-opt = SGD(lr=0.01, momentum=0.9)
+opt = SGD(learning_rate=0.01, momentum=0.9)
+
+
+def use_gpu():
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        try:
+            # Currently, memory growth needs to be the same across GPUs
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+                logical_gpus = tf.config.list_logical_devices('GPU')
+                print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            # Memory growth must be set before GPUs have been initialized
+            print(e)
+
+def do_not_use_gpu():
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+    if tf.test.gpu_device_name():
+        print('GPU found')
+    else:
+        print("No GPU found")
+
+
+do_not_use_gpu()
 
 # Creating the CNN model, using VGG Blocks
 # Three blocks of two 3x3 convolutions and a 2x2 MaxPooling2D
@@ -113,7 +139,7 @@ def run():
 
 
     file = open(base_dir + '/' + 'cnn_training.txt', 'a')
-    file.write('Training platform: My notebook Ubuntu\n')
+    file.write('Training platform: My notebook Ubuntu CPU Again\n')
     file.write('Image Size: %s\n' % targ_shape[0])
     file.write('Training time: %s\n' % tempo)
     file.write('Loss: %s\n' % loss)

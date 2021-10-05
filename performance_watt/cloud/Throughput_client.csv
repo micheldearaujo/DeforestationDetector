@@ -1,0 +1,15 @@
+Algorithm,Platform,Tamanho,Workload,qtdeTeorica,qtdeEnviada
+
+CNN,Cloud,32,1.0,20.0,18
+
+CNN,Cloud,32,0.75,26.666666666666668,22
+
+CNN,Cloud,32,0.5,40.0,29
+
+CNN,Cloud,32,0.25,80.0,44
+
+CNN,Cloud,32,0.1,200.0,63
+
+CNN,Cloud,32,0.01,2000.0,78
+
+CNN,Cloud,32,1e-09,20000000000.0,93

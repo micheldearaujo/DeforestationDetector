@@ -5,6 +5,7 @@ from utilities import *
 import numpy as np
 import pickle
 import time
+import csv
 
 #### TESTANDO O ENVIO E RECEBINDO DE IMAGES ###
 
@@ -14,7 +15,7 @@ import time
 
 # Defining the hyparams
 opt = SGD(lr=0.01, momentum=0.9)
-targ_shape = (8, 8, 3)
+targ_shape = (32, 32, 3)
 targ_size = targ_shape[:-1]
 dataset_name = 'amazon_data_%s.npz'%(targ_shape[0])
 model_name = 'cnn_%s_SGD.h5'%(targ_shape[0])
@@ -26,7 +27,7 @@ freq = 60           # Frequency of reading
 period_interval = 2100    # seconds of processing
 
 # Messenger frequency
-period = 0.01
+period = 0.5
 
 # FOG ADDRESS
 
@@ -49,7 +50,6 @@ class Message:
         self.img = img
         self.img_name = img_name
         self.result = result
-
 
 
 
@@ -88,6 +88,7 @@ def load_image():
 
 def send_image():
 
+    qtdeImages = 0
     mean_delay = 0.0
     counter = 0
     current_time = datetime.datetime.now()
@@ -115,7 +116,7 @@ def send_image():
             print("Sending the message...")
             sock2.sendall(data)
             print(f"Message sent!\n ...")
-
+            qtdeImages += 1
             # Closing connection
             sock2.close()
             print("Connection Closed.\n")
@@ -127,7 +128,7 @@ def send_image():
             
 
             # Waiting to send another one
-            time.sleep(period)
+            #time.sleep(period)
 
         except Exception:
             pass
@@ -135,8 +136,28 @@ def send_image():
 
         end = time.monotonic()
         tempo = dt.timedelta(seconds= end-start)
-        if (tempo.seconds >= period_interval+5):
+        if (tempo.seconds >= period_interval+3):
+            with open("./Throughput.txt", "a") as file:
+                file.write("-------------------------\n")
+                file.write(f"Tamanho da imagem: {targ_size[0]}, workload: {period}\n")
+                file.write(f"qtde Real de Mensagens enviadas: {qtdeImages}\n")
+                file.write(f"qtde Teórica de Mensagens enviadas: {period_interval/period}\n")
+            
+
+            with open("Throughput.csv", "a") as f:
+                writer = csv.writer(f)
+                writer.writerow((
+                    "CNN", "Cloud", targ_size[0], period, period_interval/period, qtdeImages
+                ))
+
             break
+
+
+""" with open("Throughput.csv", "w") as f:
+    writer = csv.writer(f)
+    writer.writerow((
+        "CNN", "Cloud", "Tamanho", "Workload", "qtdeTeorica", "qtdeEnviada"
+    )) """
 
 
 send_image()

@@ -109,7 +109,7 @@ for (file_number in 1:length(resources.files)){
 }
 
 # Aplicando a transformação e salvando os novos csvs (CLOUD)
-for (file_number in 2:length(resources.files)){
+for (file_number in 1:length(resources.files)){
   df <- load_transform_without_watt(resources.files[file_number])
 }
 
@@ -137,7 +137,7 @@ uniteData <- function(files){
   # Separando a coluna com o nome do arquivo que foi criada anteriormente em diferentes
   # informações, como o algoritmo, o tamanho da imagem e workload.
   df0 <- separate(df0, col='desc',
-                  into=c('Platform', 'Algorithm', 'Size', 'Workload'),
+                  into=c('info', 'Platform', 'Algorithm', 'Size', 'Workload'),
                   sep='_')
   
   # Limpando o workload
@@ -149,18 +149,10 @@ uniteData <- function(files){
   return (df0)
   
 }
-resources.files[2]
+
 data <- uniteData(resources.files)
 View(data)
 
-# ----
-resource <- read.csv(resources.files[1])
-time <- read.csv(times.files[1])
-View(resource)
-View(time)
-plot(resource$totalCpuUsage..., type='o',
-     main='Total CPU Usage (%)')
-# ----
 
 
 
@@ -209,6 +201,7 @@ end_time <- Sys.time()
 print(paste('O tempo de processamento foi de:', end_time - start_time, sep=' '))
 
 
+# Criando uma função para unir todos os time.files
 unite_TimeData <- function(files){
   time.1 <- read.csv(files[1])
   
@@ -243,7 +236,8 @@ mean.times <- times %>%
 mean.resources <- resources %>%
   group_by(Workload, Size, Algorithm, Platform) %>%
   summarise(MeanMemoryUsage = mean(percentageMemory..., na.rm=T),
-            MeanCPUUsage = mean(totalCpuUsage..., na.rm=T)
+            MeanCPUUsage = mean(totalCpuUsage..., na.rm=T),
+            MeanAbsMemoryUsage = mean(usedMemory, na.rm=T)
             )
 View(mean.resources)
 View(mean.times)
@@ -254,16 +248,16 @@ write.csv(mean.resources, 'resources/mean_resources.csv', row.names=F)
 
 
 # -- Uniting the 2 dataframes
-mean.resources$meanNetworkDelay <- mean.times$meanNetworkDelay
-mean.resources$meanResponseTime <- mean.times$meanResponseTime
+#mean.resources$meanNetworkDelay <- mean.times$meanNetworkDelay
+#mean.resources$meanResponseTime <- mean.times$meanResponseTime
 
-newcolumn <- mean.resources[1:9,1:4]
+newcolumn <- mean.resources[1:11,1:4]
 newcolumn$meanNetworkDelay <- 0
 newcolumn$meanResponseTime <- 0
-newcolumns <- rbind(newcolumn, mean.times)
+newcolumns <- rbind(newcolumn, mean.times[1:66,])
 mean.resources$meanNetworkDelay <- newcolumns$meanNetworkDelay
 mean.resources$meanResponseTime <- newcolumns$meanResponseTime
-
+View(newcolumns)
 View(mean.resources)
 write.csv(mean.resources, 'mean_values.csv', row.names=F)
 
