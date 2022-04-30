@@ -7,4 +7,4 @@ This work aims at studying the trade-offs between performance and accuracy of cl
 Although there is a direct relationship between image accuracy and quality, our experimental study shows that it is possible to use low-cost computational environments to perform image classification.
 The results indicate that Amazon rainforest can be monitored with affordable computing resources such as drones.
 
-### Please, [click here](https://github.com/micheldearaujo/DeforestationDetector/blob/main/SBESC___2021.pdf) to check out the results of this research.
+### Please, [click here](https://ieeexplore.ieee.org/document/9628252/metrics#metrics) to check out the results of this research.
